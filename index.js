@@ -41,6 +41,9 @@ function createZMQSocket(node, service){
         case "req":
             sock.connect("tcp://" + node.address + ":" + endpoint.port);
         break;
+        case "sub":
+            sock.connect("tcp://" + node.address + ":" + endpoint.port);
+        break;
         default:
             log("unhandled servicetype " + endpoint.type);
             return false;
@@ -56,7 +59,7 @@ function parsePayload(node){
         payload = JSON.parse(node.payload);
     } catch(e) {
         log("no or invalid payload from " + node.address);
-        log(JSON.stringify(node))
+        log(JSON.stringify(node));
         return false;
     }
     return payload;
