@@ -1,5 +1,5 @@
 {
-  "name": "zonar-zmq",
+  "name": "service.helper",
   "version": "0.0.0",
   "description": "",
   "main": "index.js",
