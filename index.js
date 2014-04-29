@@ -66,7 +66,49 @@ function parsePayload(node){
 }
 
 
-function getService(zonarNode, serviceName){
+function getService(zonarNode, serviceName, cb){
+
+    if(typeof cb !== 'function'){
+        return false;
+    }
+
+    // check if the service already exists in the nodelist
+    var sock = getServiceStatic(zonarNode, serviceName);
+
+    if (sock != false) {
+        // we found a socket in the nodelist use it
+        cb(false, sock);
+        return;
+    }
+
+    var service = parseServiceName(serviceName);
+
+    if (service == false) {
+        // invalid serviceName
+        return cb("invalid serviceName");
+    }
+
+    zonarNode.once("found." + service.nodeName, function(node){
+        if(node == false){
+            // service not found
+            log("service not found");
+            return cb("service not found");
+        }
+
+        var socket = createZMQSocket(node, service);
+
+        if (socket == false){
+            log("could not create socket");
+            return cb("could not create socket");
+        }
+
+        return cb(false, socket);
+
+    });
+};
+
+
+function getServiceStatic(zonarNode, serviceName){
 
     var service = parseServiceName(serviceName);
 

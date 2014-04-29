@@ -39,24 +39,55 @@ describe("parsePayload", function() {
 });
 
 
-//describe("bb test", function() {
-//
-//    var producer = zonar.create({net: "test", name: "producer", payload : { doc : { port : 5556, type :"req"}}});
-//    var consumer = zonar.create({net: "test", name: "consumer" });
-//
-//    before(function(){
-//        consumer.start();
-//        producer.start();
-//    });
-//
-//    after(function(){
-//        consumer.stop(function(){
-//            producer.stop();
-//        });
-//    });
-//
-//    it("asd", function(done) {
-//        done();
-//    });
-//
-//});
+describe("bb test", function() {
+
+    var producer = zonar.create({net: "test", name: "producer", payload : { doc : { port : 5556, type :"req"}}});
+    var consumer = zonar.create({net: "test", name: "consumer" });
+
+    before(function(done){
+        producer.start(function(){
+            // test might fail, timeout is not a good way to ensure sync behaviour
+            setTimeout(function(){
+                consumer.start();
+                done();
+            }, 300);
+        });
+    });
+
+    after(function(){
+        consumer.stop(function(){
+            producer.stop();
+        });
+    });
+
+    it("should fail to get a service that doesn't exist", function(done) {
+        zonarHelper.getService(consumer, "producer.doccc", function(err, sock){
+            err.should.not.be.false;
+            done();
+        });
+    });
+
+    it("should be able to get an existing service", function(done) {
+        zonarHelper.getService(consumer, "producer.doc", function(err, sock){
+            err.should.be.false;
+            should.exist(sock);
+            done();
+        });
+    });
+
+    it("should be able to get an existing service when the service goes online after the consumer", function(done) {
+
+    var producer2 = zonar.create({net: "test", name: "producer2", payload : { doc : { port : 5556, type :"req"}}});
+
+        setTimeout(function(){
+            producer2.start();
+        }, 300);
+
+        zonarHelper.getService(consumer, "producer2.doc", function(err, sock){
+            err.should.be.false;
+            should.exist(sock);
+            producer2.stop();
+            done();
+        });
+    });
+});
