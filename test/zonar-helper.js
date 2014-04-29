@@ -1,5 +1,5 @@
 var should = require("should");
-var zonarHelper = require("../zonar-helper");
+var zonarHelper = require("../");
 var zonar = require("../node_modules/zonar/");
 
 describe("parseServiceName", function() {

@@ -18,8 +18,8 @@
   "homepage": "https://github.com/faddi/zonar-zmq",
   "dependencies": {
     "zmq": "~2.6.0",
-    "zonar": "~0.4.6",
     "mocha": "~1.18.2",
-    "should": "~3.3.1"
+    "should": "~3.3.1",
+    "zonar": "~0.5.6"
   }
 }
