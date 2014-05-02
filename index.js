@@ -136,19 +136,19 @@ function getServiceStatic(zonarNode, serviceName){
 };
 
 function handleInterrupt(zonar){
-    if (!z) {
+    if (!zonar) {
         console.log("no zonar instance given to handleInterrupt");
         return;
     }
 
-    if (typeof z.stop != 'function'){
+    if (typeof zonar.stop != 'function'){
         console.log("zonar instance does not have a stop function");
         return;
     }
 
     process.on( 'SIGINT', function() {
         console.log("Stopping...");
-        z.stop(function() {
+        zonar.stop(function() {
             console.log("Stopped");
             process.exit( );
         });
