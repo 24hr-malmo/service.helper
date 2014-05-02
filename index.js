@@ -135,6 +135,26 @@ function getServiceStatic(zonarNode, serviceName){
     return socket;
 };
 
+function handleInterrupt(zonar){
+    if (!z) {
+        console.log("no zonar instance given to handleInterrupt");
+        return;
+    }
+
+    if (typeof z.stop != 'function'){
+        console.log("zonar instance does not have a stop function");
+        return;
+    }
+
+    process.on( 'SIGINT', function() {
+        console.log("Stopping...");
+        z.stop(function() {
+            console.log("Stopped");
+            process.exit( );
+        });
+    });
+}
+
 module.exports = {
     getService : getService,
 
@@ -142,6 +162,7 @@ module.exports = {
     parsePayload : parsePayload,
     createZMQSocket : createZMQSocket,
     parseServiceName : parseServiceName,
+    handleInterrupt : handleInterrupt,
     setLog : function(val){
         dolog = val;
     }
