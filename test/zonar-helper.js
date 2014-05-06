@@ -1,6 +1,7 @@
 var should = require("should");
 var zonarHelper = require("../");
 var zonar = require("zonar");
+var zmq = require("zmq");
 
 describe("parseServiceName", function() {
 
@@ -89,5 +90,46 @@ describe("bb test", function() {
             producer2.stop();
             done();
         });
+    });
+
+});
+
+describe("doc helper", function() {
+    var docString = "foo to the bar";
+    var docHelper = zonarHelper.createDoc(docString);
+
+    before(function(){
+    });
+
+    after(function(){
+    });
+
+    it("getPort should return a valid port", function(done) {
+        var port = docHelper.getPort();
+        port.should.be.within(1, 65535);
+        done();
+    });
+
+    it("a zmq req socket should be able to get the correct docString response from the doc service", function(done) {
+        var port = docHelper.getPort();
+        var req = zmq.socket("req");
+
+        req.connect("tcp://127.0.0.1:" + port);
+
+        req.send("doc");
+
+        req.on("message", function(msg){
+            var m = JSON.parse(msg);
+            m.doc.should.equal(docString);
+            done();
+        });
+    });
+
+    it("getPayload should return a valid payload part for the doc", function(done) {
+        var payload = docHelper.getPayload();
+
+        payload.type.should.equal("rep");
+        payload.port.should.equal(docHelper.getPort());
+        done();
     });
 });

@@ -1,4 +1,5 @@
 var zmq = require("zmq");
+var url = require("url");
 
 var dolog = false;
 
@@ -192,6 +193,50 @@ function handleInterrupt(zonar){
     });
 }
 
+
+// options :
+// String (the doc string)
+// or
+// object
+//     docString : String
+
+function createDoc(options){
+
+    var pub = {};
+
+    var docString = typeof options == 'string' ? options : options.docString;
+
+    // sock setup
+    var sock = zmq.socket("rep");
+    sock.bindSync("tcp://*:0");
+
+    sock.on("message", function(){
+        sock.send(JSON.stringify({
+            doc : docString
+        }));
+    });
+
+    // fns
+    pub.close = function(){
+            sock.close();
+    };
+
+    pub.getPort = function(){
+        var u = url.parse(sock.last_endpoint);
+        return u.port;
+    };
+
+    pub.getPayload = function(){
+        return {
+            type : "rep",
+            port : pub.getPort()
+        }
+    };
+
+    return pub;
+}
+
+
 module.exports = {
     getService : getService,
 
@@ -201,6 +246,7 @@ module.exports = {
     parseServiceName : parseServiceName,
     handleInterrupt : handleInterrupt,
     getServiceAddress : getServiceAddress,
+    createDoc : createDoc,
     setLog : function(val){
         dolog = val;
     }
