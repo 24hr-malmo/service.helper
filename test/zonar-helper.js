@@ -42,7 +42,7 @@ describe("parsePayload", function() {
 
 describe("bb test", function() {
 
-    var producer = zonar.create({net: "test", name: "producer", payload : { doc : { port : 5556, type :"req"}}});
+    var producer = zonar.create({net: "test", name: "producer", payload : { doc : { port : 5576, type :"rep"}}});
     var consumer = zonar.create({net: "test", name: "consumer" });
 
     before(function(done){
@@ -78,7 +78,7 @@ describe("bb test", function() {
 
     it("should be able to get an existing service when the service goes online after the consumer", function(done) {
 
-    var producer2 = zonar.create({net: "test", name: "producer2", payload : { doc : { port : 5556, type :"req"}}});
+    var producer2 = zonar.create({net: "test", name: "producer2", payload : { doc : { port : 5556, type :"rep"}}});
 
         setTimeout(function(){
             producer2.start();

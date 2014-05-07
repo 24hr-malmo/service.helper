@@ -27,18 +27,20 @@ function parseServiceName(serviceName){
 function createZMQSocket(node, service){
     var sock = null;
     var endpoint = null;
+    var endpointType = null;
 
     try {
         // invalid types will be caught here
         var services = node.payload;
         endpoint = services[service.serviceName];
-        sock = zmq.socket(endpoint.type);
+        endpointType = getOtherSockType(endpoint.type);
+        sock = zmq.socket(endpointType);
     } catch (e){
         log(e, e.stack);
         return false;
     }
 
-    switch(endpoint.type){
+    switch(endpointType){
         case "req":
             sock.connect("tcp://" + node.address + ":" + endpoint.port);
         break;
@@ -46,14 +48,28 @@ function createZMQSocket(node, service){
             sock.connect("tcp://" + node.address + ":" + endpoint.port);
         break;
         default:
-            var e = new Error();
-            log("Unhandled servicetype " + endpoint.type, e.stack);
+            log("Unhandled servicetype " + endpointType);
             return false;
         break;
     }
 
     return sock;
 };
+
+// gets the socket type to connect with
+function getOtherSockType(type){
+    switch(type){
+        case "rep":
+            return "req";
+        break;
+        case "pub":
+            return "sub";
+        break;
+        default:
+            return "invalid";
+        break;
+    }
+}
 
 function parsePayload(node){
     var payload = null;
@@ -164,9 +180,8 @@ function findServiceNode(zonarNode, nodeName){
 
     var node = zonarNode.getList()[nodeName];
 
-    if (node == false) {
-        var e = new Error();
-        log("A node with the name \"%s\" could not be found.", e.stack);
+    if (typeof node == 'undefined') {
+        log("A node with the name \"%s\" could not be found.", nodeName);
         return false;
     }
 
