@@ -188,7 +188,7 @@ function findServiceNode(zonarNode, nodeName){
     return node;
 }
 
-function handleInterrupt(zonar){
+function handleInterrupt(zonar, cb){
     if (!zonar) {
         console.error("no zonar instance given to handleInterrupt");
         return;
@@ -199,11 +199,21 @@ function handleInterrupt(zonar){
         return;
     }
 
+    var stop = function(){
+        log("Stopped");
+        process.exit( );
+    }
+
     process.on( 'SIGINT', function() {
         log("Stopping...");
         zonar.stop(function() {
-            log("Stopped");
-            process.exit( );
+
+            if (typeof cb == 'function'){
+                cb(stop);
+            } else {
+                stop();
+            }
+
         });
     });
 }
