@@ -1,5 +1,6 @@
 var zmq = require("zmq");
 var url = require("url");
+var fs = require("fs");
 
 var dolog = false;
 
@@ -83,7 +84,9 @@ function parsePayload(node){
     return payload;
 }
 
-
+// gets a service
+// checks the nodelist first and if the node isn't found there it waits for it
+// to come online
 function getService(zonarNode, serviceName, cb){
 
     if(typeof cb !== 'function'){
@@ -125,6 +128,7 @@ function getService(zonarNode, serviceName, cb){
 };
 
 
+// only checks services already connected to this node
 function getServiceStatic(zonarNode, serviceName){
 
     var service = parseServiceName(serviceName);
@@ -224,12 +228,32 @@ function handleInterrupt(zonar, cb){
 // or
 // object
 //     docString : String
+//     filename : filename
 
 function createDoc(options){
 
     var pub = {};
 
-    var docString = typeof options == 'string' ? options : options.docString;
+    var docString = null;
+    switch(typeof options){
+        case "string":
+            docString = options;
+        break;
+        case "object":
+            if(options.docString){
+                docString = options.docString;
+            } else if (options.filename){
+                // deliberately skip error checking here, just fail if an invalid file is given
+                docString = fs.readFileSync(options.filename, {encoding : "utf8"});
+            } else {
+                throw new Error("Invalid options, valid params are : docString or filename");
+            }
+        break;
+        default:
+            docString = "No doc :(";
+        break;
+
+    }
 
     // sock setup
     var sock = zmq.socket("rep");

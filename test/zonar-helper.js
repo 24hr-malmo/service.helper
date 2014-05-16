@@ -122,6 +122,7 @@ describe("doc helper", function() {
             var m = JSON.parse(msg);
             m.doc.should.equal(docString);
             done();
+            req.close();
         });
     });
 
@@ -132,4 +133,31 @@ describe("doc helper", function() {
         payload.port.should.equal(docHelper.getPort());
         done();
     });
+
+    it("doc helper should be able to get documentation from a file", function(done) {
+        var docHelper2 = zonarHelper.createDoc({ filename : "./test/doc.md"});
+        var payload = docHelper2.getPayload();
+        var req = zmq.socket("req");
+
+        req.connect("tcp://127.0.0.1:" + docHelper2.getPort());
+
+        req.send("doc");
+
+        req.on("message", function(msg){
+            var m = JSON.parse(msg);
+            m.doc.should.equal("text\n");
+            done();
+            req.close();
+        });
+    });
+
+    it("doc helper should throw when an invalid filename is given", function(done) {
+        try {
+            var docHelper3 = zonarHelper.createDoc({filename : "invalidfile"});
+        } catch (err){
+            err.code.should.be.equal("ENOENT")
+            done();
+        }
+    });
+
 });
