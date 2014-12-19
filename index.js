@@ -73,14 +73,20 @@ function getOtherSockType(type){
 }
 
 function parsePayload(node){
-    var payload = null;
-    try {
-        payload = JSON.parse(node.payload);
-    } catch(e) {
+    var payload = tryParseJson(node.payload);
+    if(payload === false){
         log("no or invalid payload from " + node.address);
         log(JSON.stringify(node));
-        return false;
     }
+
+    return payload;
+}
+
+function tryParseJson(msg){
+    var payload = false;
+    try {
+        payload = JSON.parse(msg);
+    } catch(e) {}
     return payload;
 }
 
@@ -206,7 +212,7 @@ function handleInterrupt(zonar, cb){
     var stop = function(){
         log("Stopped");
         process.exit( );
-    }
+    };
 
     process.on( 'SIGINT', function() {
         log("Stopping...");
@@ -279,7 +285,7 @@ function createDoc(options){
         return {
             type : "rep",
             port : pub.getPort()
-        }
+        };
     };
 
     return pub;
@@ -296,6 +302,7 @@ module.exports = {
     handleInterrupt : handleInterrupt,
     getServiceAddress : getServiceAddress,
     createDoc : createDoc,
+    tryParseJson : tryParseJson,
     setLog : function(val){
         dolog = val;
     }
