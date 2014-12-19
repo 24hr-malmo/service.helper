@@ -4,7 +4,8 @@ var zmq = require('zmq');
 
 var o = new opt([
     ["t", "type=ARG", "type of socket (req, res, pub, sub, ...)"],
-    ["r", "remote=ARG", "remote host and port, 1.2.3.4:1234"]
+    ["r", "remote=ARG", "remote host and port, 1.2.3.4:1234"],
+    ["m", "message=ARG", "message to send ex \"{\\\"type\\\":\\\"getMessage\\\"}\""]
 ]);
 
 o.setHelp(
@@ -19,11 +20,11 @@ init(options.options);
 
 
 function init(options){
-    console.log(options);
+    console.log("Options : ", options + " \n");
 
     switch(options.type){
     case "req":
-        req(options.remote);
+        req(options.remote, options.message);
         break;
     default:
         optionFatal("Invalid type");
@@ -53,7 +54,7 @@ function req(remote, message){
     socket.connect(remote);
 
     socket.on("message", function(response){
-        console.log("Response : " + response.toString());
+        console.log("Response : " + response.toString() + "\n");
         die();
     });
 
@@ -61,11 +62,11 @@ function req(remote, message){
         message = "";
     }
 
-    console.log("Sending message \"" + message + "\" to \"" + remote + "\"");
+    console.log("Sending message \"" + message + "\" to \"" + remote + "\"\n");
 
     socket.send(message);
 
-    console.log("Message sent, waiting for response...");
+    console.log("Message sent, waiting for response...\n");
 }
 
 
