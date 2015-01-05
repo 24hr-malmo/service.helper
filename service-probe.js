@@ -30,18 +30,13 @@ function init(options){
         optionFatal("Invalid type");
         break;
     }
-
 }
-
-
 
 function optionFatal(msg){
     console.log("\nError : " + msg + "\n");
     o.showHelp();
     process.exit();
 }
-
-
 
 function req(remote, message){
 
@@ -68,10 +63,6 @@ function req(remote, message){
 
     console.log("Message sent, waiting for response...\n");
 }
-
-
-
-
 
 function die(){
     console.log("die called");

@@ -42,15 +42,15 @@ function createZMQSocket(node, service){
     }
 
     switch(endpointType){
-        case "req":
-            sock.connect("tcp://" + node.address + ":" + endpoint.port);
+    case "req":
+        sock.connect("tcp://" + node.address + ":" + endpoint.port);
         break;
-        case "sub":
-            sock.connect("tcp://" + node.address + ":" + endpoint.port);
+    case "sub":
+        sock.connect("tcp://" + node.address + ":" + endpoint.port);
         break;
-        default:
-            log("Unhandled servicetype " + endpointType);
-            return false;
+    default:
+        log("Unhandled servicetype " + endpointType);
+        return false;
         break;
     }
 
@@ -60,14 +60,14 @@ function createZMQSocket(node, service){
 // gets the socket type to connect with
 function getOtherSockType(type){
     switch(type){
-        case "rep":
-            return "req";
+    case "rep":
+        return "req";
         break;
-        case "pub":
-            return "sub";
+    case "pub":
+        return "sub";
         break;
-        default:
-            return "invalid";
+    default:
+        return "invalid";
         break;
     }
 }
@@ -242,21 +242,21 @@ function createDoc(options){
 
     var docString = null;
     switch(typeof options){
-        case "string":
-            docString = options;
+    case "string":
+        docString = options;
         break;
-        case "object":
-            if(options.docString){
-                docString = options.docString;
-            } else if (options.filename){
-                // deliberately skip error checking here, just fail if an invalid file is given
-                docString = fs.readFileSync(options.filename, {encoding : "utf8"});
-            } else {
-                throw new Error("Invalid options, valid params are : docString or filename");
-            }
+    case "object":
+        if(options.docString){
+            docString = options.docString;
+        } else if (options.filename){
+            // deliberately skip error checking here, just fail if an invalid file is given
+            docString = fs.readFileSync(options.filename, {encoding : "utf8"});
+        } else {
+            throw new Error("Invalid options, valid params are : docString or filename");
+        }
         break;
-        default:
-            docString = "No doc :(";
+    default:
+        docString = "No doc :(";
         break;
 
     }
@@ -273,7 +273,7 @@ function createDoc(options){
 
     // fns
     pub.close = function(){
-            sock.close();
+        sock.close();
     };
 
     pub.getPort = function(){
