@@ -67,18 +67,16 @@ function createService(){
             var fetchEndpoint = function(){
                 helper.getService(priv.zonar, to, function(err, sock){
                     if(err){
-                        console.log(err);
-                        console.log("ERROR ^^^^");
+                        callback(err, null);
                         return;
                     }
 
                     sock.on("message", function(msg){
-                        callback(msg);
+                        callback(null, msg);
                         sock.close();
                     });
 
                     sock.send(message);
-
                 });
             };
 
@@ -92,10 +90,16 @@ function createService(){
         } else {
 
             var sock = zmq.socket("req");
-            sock.connect(to);
-            sock.send(message);
+
+            try {
+                sock.connect(to);
+                sock.send(message);
+            } catch (e) {
+                callback(e, null);
+            }
+
             sock.on("message", function(msg){
-                callback(msg);
+                callback(null, msg);
                 sock.close();
             });
         }
@@ -142,13 +146,23 @@ function createService(){
         settings.payload = pub.getPayload();
 
         priv.zonar = zonar.create(settings);
-        priv.zonar.start();
+        priv.zonar.start(runZonarStart);
     };
 
     pub.listen = function(settings){
         priv.zonar = zonar.create(settings);
-        priv.zonar.listen();
+        priv.zonar.listen(runZonarStart);
     };
+
+    pub.stop = function(){
+        priv.zonar.stop();
+    };
+
+    function runZonarStart(){
+        for(var i = 0, ii = zonarStart.length; i < ii; i++){
+            zonarStart[i]();
+        }
+    }
 
     // private functions
     function addPayload(name, payload){

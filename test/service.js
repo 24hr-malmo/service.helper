@@ -22,6 +22,48 @@ describe("parseServiceName", function() {
     });
 
     it("a reply service definition should be callable", function(done) {
+        var msg = "this is an echo message";
+
+        var s = createService();
+        s.rep("echo", function(msg, reply){
+            reply(msg);
+        });
+        s.broadcast({net: "test", name: "testname"});
+
+        var s2 = createService();
+        s2.listen({net: "test", name: "testname2"});
+        s2.req("testname.echo", msg, function(err, response){
+            (err === null).should.be.true;
+            response.toString().should.equal(msg);
+            s2.stop();
+            s.stop();
+            done();
+        });
+
+    });
+
+    it("req for zonar node should get registered and run upon zonar start", function(done) {
+        var msg = "this is an echo message";
+
+        var s = createService();
+        s.rep("echo", function(msg, reply){
+            reply(msg);
+        });
+
+        var s2 = createService();
+        s2.req("testname.echo", msg, function(err, response){
+            (err === null).should.be.true;
+            response.toString().should.equal(msg);
+            s.stop();
+            s2.stop();
+            done();
+        });
+
+        s.broadcast({net: "test", name: "testname"});
+        s2.listen({net: "test", name: "testname2"});
+    });
+
+    it.skip("a reply service definition should be callable", function(done) {
         var s = createService();
 
         s.rep(function(msg, reply){
