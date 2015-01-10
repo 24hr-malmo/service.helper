@@ -112,7 +112,7 @@ function getService(zonarNode, serviceName, cb){
 
     if (service == false) {
         // invalid serviceName
-        cb("invalid serviceName");
+        cb("invalid serviceName " + serviceName);
         return;
     }
 
@@ -290,7 +290,6 @@ function createDoc(options){
 
     return pub;
 }
-
 
 module.exports = {
     getService : getService,
