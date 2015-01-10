@@ -25,8 +25,11 @@ describe("parseServiceName", function() {
         var msg = "this is an echo message";
 
         var s = createService();
-        s.rep("echo", function(msg, reply){
-            reply(msg);
+        s.rep({
+            endpointName : "echo",
+            callback : function(msg, reply){
+                reply(msg);
+            }
         });
         s.broadcast({net: "test", name: "testname"});
 
@@ -46,8 +49,11 @@ describe("parseServiceName", function() {
         var msg = "this is an echo message";
 
         var s = createService();
-        s.rep("echo", function(msg, reply){
-            reply(msg);
+        s.rep({
+            endpointName : "echo",
+            callback : function(msg, reply){
+                reply(msg);
+            }
         });
 
         var s2 = createService();
@@ -62,6 +68,33 @@ describe("parseServiceName", function() {
         s.broadcast({net: "test", name: "testname"});
         s2.listen({net: "test", name: "testname2"});
     });
+
+    it("connection via tcp should be possible", function(done) {
+        var msg = "this is an echo message";
+        var port = 9898;
+
+        var s = createService();
+        s.rep({
+            endpointName : "echo",
+            port : port,
+            callback : function(msg, reply){
+                reply(msg);
+            }
+        });
+
+        var s2 = createService();
+        s2.req("tcp://127.0.0.1:" + port, msg, function(err, response){
+            (err === null).should.be.true;
+            response.toString().should.equal(msg);
+            s.stop();
+            s2.stop();
+            done();
+        });
+
+        s.broadcast({net: "test", name: "testname"});
+        s2.listen({net: "test", name: "testname2"});
+    });
+
 
     it.skip("a reply service definition should be callable", function(done) {
         var s = createService();

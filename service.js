@@ -105,28 +105,38 @@ function createService(){
         }
     };
 
-    pub.rep = function(arg1, arg2){
+    pub.rep = function(obj){
         var endpointName = null;
         var callback = null;
+        var port = 0;
 
-        if(typeof arg1 == 'function'){
-            callback = arg1;
-        } else if(typeof arg2 == 'function') {
-            endpointName = arg1;
-            callback = arg2;
-        } else {
-            throw new Error("invalid arguments, arg1 or arg2 needs to be a function");
+        if(typeof obj.callback != 'function'){
+            throw new Error("No callback passed to rep function");
+        }
+
+        callback = obj.callback;
+
+        if(obj.endpointName && typeof obj.endpointName == 'string'){
+            endpointName = obj.endpointName;
+        }
+
+        if(obj.port && typeof obj.port == 'number'){
+            port = obj.port;
         }
 
         var sock = zmq.socket("rep");
-        sock.bindSync("tcp://*:0");
+        sock.bindSync("tcp://*:" + port);
         sock.on("message", function(message){
             callback(message, function(reply) {
                 sock.send(reply);
             });
         });
 
-        var port = url.parse(sock.last_endpoint).port;
+        // if we didn't have a port to bind to fetch the random one
+        if(port == 0){
+            port = url.parse(sock.last_endpoint).port;
+        }
+
         if(endpointName == null){
             endpointName = "rep_" + port;
         }
