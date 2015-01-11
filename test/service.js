@@ -121,7 +121,10 @@ describe("parseServiceName", function() {
 
         s.broadcast({net: "test", name: "testname"}, function(){
             s2.listen({net: "test", name: "testname2"}, function(){
-                publish(data);
+                // ugly
+                setTimeout(function(){
+                    publish(data);
+                }, 100);
             });
         });
     });
