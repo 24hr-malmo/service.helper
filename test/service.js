@@ -69,7 +69,7 @@ describe("parseServiceName", function() {
         s2.listen({net: "test", name: "testname2"});
     });
 
-    it("connection via tcp should be possible", function(done) {
+    it("connection via tcp to fixed port rep sock should be possible", function(done) {
         var msg = "this is an echo message";
         var port = 9898;
 
@@ -95,31 +95,33 @@ describe("parseServiceName", function() {
         s2.listen({net: "test", name: "testname2"});
     });
 
+    it("pub sub simple", function(done) {
+        var data = "this is a pub message";
 
-    it.skip("a reply service definition should be callable", function(done) {
         var s = createService();
-
-        s.rep(function(msg, reply){
-            // send some reply
-            reply(msg);
+        s.pub({
+            endpointName : "data",
+            callback : function(publish){
+                setTimeout(function(){
+                    publish(data);
+                }, 300);
+            }
         });
 
-        // reply bind to specific zonar name
-        s.rep("getCurrentMessage", function(msg, reply){
-            // send some reply
-            reply(msg);
+        var s2 = createService();
+        s2.sub({
+            to : "testname.data",
+            callback : function(err, msg){
+                (err === null).should.be.true;
+                msg.toString().should.equal(data);
+                s.stop();
+                s2.stop();
+                done();
+            }
         });
 
         s.broadcast({net: "test", name: "testname"});
-
-        var s2 = createService();
         s2.listen({net: "test", name: "testname2"});
-
-        s2.req("testname.getCurrentMessage", "testing", function(response){
-            console.log("response : " + response);
-            done();
-        });
-
     });
 
     it.skip("the following should work", function(){

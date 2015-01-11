@@ -16,28 +16,39 @@ function createService(){
     var fns = [];
     var zonarStart = [];
 
-    pub.pub = function(arg1, arg2){
-
+    // TODO: should probably merge this and rep somehow...
+    pub.pub = function(obj){
         var endpointName = null;
         var callback = null;
+        var port = 0;
 
-        if(typeof arg1 == 'function'){
-            callback = arg1;
-        } else if(typeof arg2 == 'function') {
-            endpointName = arg1;
-            callback = arg2;
-        } else {
-            throw new Error("invalid arguments, arg1 or arg2 needs to be a function");
+        if(typeof obj.callback != 'function'){
+            throw new Error("No callback passed to rep function");
+        }
+
+        callback = obj.callback;
+
+        if(obj.endpointName && typeof obj.endpointName == 'string'){
+            endpointName = obj.endpointName;
+        }
+
+        if(obj.port && typeof obj.port == 'number'){
+            port = obj.port;
         }
 
         var sock = zmq.socket("pub");
-        sock.bindSync("tcp://*:0");
-        callback(sock.send);
+        sock.bindSync("tcp://*:" + port);
+        callback(function(msg){
+            sock.send(msg);
+        });
 
-        var port = url.parse(sock.last_endpoint).port;
+        // if we didn't have a port to bind to fetch the random one
+        if(port == 0){
+            port = url.parse(sock.last_endpoint).port;
+        }
 
         if(endpointName == null){
-            endpointName = "rep_" + port;
+            endpointName = "pub_" + port;
         }
 
         addPayload(endpointName, {
@@ -46,14 +57,66 @@ function createService(){
         });
     };
 
-    pub.sub = function(to, channel, fn){
-        var sock = zmq.socket("sub");
-        sock.bindSync("tcp://*:0");
-        fn(sock);
+    pub.sub = function(obj){
+        var to = null;
+        var channel = null;
+        var callback = null;
+
+        if(typeof obj.callback != 'function'){
+            throw new Error('sub needs a callback function. "' + obj.callback + '" was provided');
+        }
+        callback = obj.callback;
+
+        if(obj.to == null || obj.to.length == 0){
+            callback("to parameter invalid or not set", null);
+        }
+        to = obj.to;
+
+        if(obj.channel && obj.channel.length > 0){
+            channel = obj.channel;
+        }
+
+        var uri = url.parse(to);
+        if(uri.protocol == null){
+
+            var fetchEndpoint = function(){
+                helper.getService(priv.zonar, to, function(err, sock){
+                    if(err){
+                        callback(err, null);
+                        return;
+                    }
+
+                    setupCallback(sock, channel, callback);
+                });
+            };
+
+            if(priv.zonar != null){
+                fetchEndpoint();
+            } else {
+                zonarStart.push(fetchEndpoint);
+            }
+
+        } else {
+            var sock = zmq.socket("sub");
+            sock.connect(to);
+            setupCallback(sock, channel, callback);
+        }
+
+        function setupCallback(sock, channel, callback){
+            if(channel != null){
+                sock.subscribe(channel);
+                sock.on("message", function(msg){
+                    callback(null, msg);
+                });
+            } else {
+                sock.subscribe("");
+                sock.on("message", function(msg){
+                    callback(null, msg);
+                });
+            }
+        }
     };
 
-    // s.req("tcp://1.1.1.1:1233", "hello").on("message", function(message){ console.log("response : " + message); });
-    // s.req("zonarname", "hello").on("message", function(message){ console.log("response : " + message); });
     pub.req = function(to, message, callback){
 
         if(typeof to != 'string' || typeof message != 'string'){
