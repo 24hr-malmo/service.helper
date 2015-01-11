@@ -210,7 +210,7 @@ function createService(){
         });
     };
 
-    pub.broadcast = function(settings){
+    pub.broadcast = function(settings, next){
         // init zonar and send payload
         if(Object.keys(payloads).length === 0){
             throw new Error("Can't start service without any servicedefinitions");
@@ -219,12 +219,22 @@ function createService(){
         settings.payload = pub.getPayload();
 
         priv.zonar = zonar.create(settings);
-        priv.zonar.start(runZonarStart);
+        priv.zonar.start(function(){
+            runZonarStart();
+            if(typeof next == 'function'){
+                next();
+            }
+        });
     };
 
-    pub.listen = function(settings){
+    pub.listen = function(settings, next){
         priv.zonar = zonar.create(settings);
-        priv.zonar.listen(runZonarStart);
+        priv.zonar.listen(function(){
+            runZonarStart();
+            if(typeof next == 'function'){
+                next();
+            }
+        });
     };
 
     pub.stop = function(){

@@ -97,14 +97,13 @@ describe("parseServiceName", function() {
 
     it("pub sub simple", function(done) {
         var data = "this is a pub message";
+        var publish = null;
 
         var s = createService();
         s.pub({
             endpointName : "data",
-            callback : function(publish){
-                setTimeout(function(){
-                    publish(data);
-                }, 300);
+            callback : function(publisher){
+                publish = publisher;
             }
         });
 
@@ -120,8 +119,11 @@ describe("parseServiceName", function() {
             }
         });
 
-        s.broadcast({net: "test", name: "testname"});
-        s2.listen({net: "test", name: "testname2"});
+        s.broadcast({net: "test", name: "testname"}, function(){
+            s2.listen({net: "test", name: "testname2"}, function(){
+                publish(data);
+            });
+        });
     });
 
     it.skip("the following should work", function(){
