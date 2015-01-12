@@ -2,7 +2,7 @@ var should = require("should");
 var zmq = require("zmq");
 var createService = require("../service");
 
-describe("parseServiceName", function() {
+describe("service", function() {
 
     it("a service should not be startable without service definitions", function() {
         var s = createService();
@@ -11,18 +11,21 @@ describe("parseServiceName", function() {
         }).should.throw();
     });
 
-    it.skip("a service should be startable with one service definition", function(done) {
+    it("a service should be startable with one service definition", function(done) {
         var s = createService();
 
-        s.rep(function(_, rep){ rep("data"); });
+        s.rep(function(err, msg, rep){
+            rep("data");
+        });
 
         (function(){
-            s.broadcast();
+            s.broadcast({ net: "data", name :"blah"}, function(){
+                s.stop(function(){
+                    done();
+                });
+            });
         }).should.not.throw();
 
-        s.stop(function(){
-            done();
-        });
     });
 
     it("a reply service definition should be callable", function(done) {
@@ -102,19 +105,17 @@ describe("parseServiceName", function() {
         var port = 9898;
 
         var s = createService();
-        setTimeout(function(){
-            s.rep({ endpointName : "echo", port : port}, function(err, msg, reply){
-                (err === null).should.be.true;
+        s.rep({ endpointName : "echo", port : port}, function(err, msg, reply){
+            (err === null).should.be.true;
+        });
+        s.rep({ endpointName : "echo", port : port}, function(err, msg, reply){
+            (err === null).should.be.false;
+            s.stop(function(){
+                done();
             });
-            s.rep({ endpointName : "echo", port : port}, function(err, msg, reply){
-                (err === null).should.be.false;
-                s.stop(function(){
-                    done();
-                });
-            });
+        });
+        s.broadcast({net: "test", name: "testname"});
 
-            s.broadcast({net: "test", name: "testname"});
-        }, 1000);
     });
 
     it("pub sub simple", function(done) {
@@ -133,7 +134,6 @@ describe("parseServiceName", function() {
             msg.toString().should.equal(data);
             s.stop(function(){
                 s2.stop(function(){
-                    console.log("hello");
                     done();
                 });
             });

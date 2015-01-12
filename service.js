@@ -49,7 +49,10 @@ function createService(){
         try {
             sock.bindSync("tcp://*:" + port);
         } catch (e){
-            callback(e);
+            // push this to next tick to ensure that the callback behaves async
+            setTimeout(function(){
+                callback(e);
+            }, 0);
         }
 
         callback(null, function(msg){
@@ -118,7 +121,10 @@ function createService(){
             try{
                 sock.connect(to);
             } catch (e) {
-                callback(e);
+                // push this to next tick to ensure that the callback behaves async
+                setTimeout(function(){
+                    callback(e);
+                }, 0);
                 return;
             }
 
@@ -183,7 +189,10 @@ function createService(){
                 sock.connect(to);
                 sock.send(message);
             } catch (e) {
-                callback(e, null);
+                // push this to next tick to ensure that the callback behaves async
+                setTimeout(function(){
+                    callback(e);
+                }, 0);
                 return;
             }
 
@@ -225,7 +234,10 @@ function createService(){
         try {
             sock.bindSync("tcp://*:" + port);
         } catch (e){
-            callback(e);
+            // push this to next tick to ensure that the callback behaves async
+            setTimeout(function(){
+                callback(e);
+            }, 0);
             return;
         }
 
@@ -259,7 +271,11 @@ function createService(){
         settings.payload = pub.getPayload();
 
         priv.zonar = zonar.create(settings);
-        priv.zonar.start(function(){
+        //    priv.zonar.on("error", function(e){
+        //        console.log("ERROR");
+        //        console.log(e);
+        //    });
+        priv.zonar.start(function(err){
             runZonarStart();
             if(typeof next == 'function'){
                 next();
@@ -269,7 +285,11 @@ function createService(){
 
     pub.listen = function(settings, next){
         priv.zonar = zonar.create(settings);
-        priv.zonar.listen(function(){
+        //priv.zonar.on("error", function(e){
+        //    console.log("ERROR");
+        //    console.log(e);
+        //});
+        priv.zonar.listen(function(err){
             runZonarStart();
             if(typeof next == 'function'){
                 next();
@@ -281,15 +301,15 @@ function createService(){
 
         for(var i = 0, ii = sockets.length; i < ii ; i++){
             try{
-            sockets[i].close();
+                sockets[i].close();
             } catch (e){
+                // ignore any error we just try to shut as down as much as possible
                 //console.log(e);
             }
         }
 
-        if(priv.zonar !== null){
+        if(priv.zonar != null){
             priv.zonar.stop(cb);
-            priv.zonar = null;
         } else {
             cb();
         }
