@@ -12,33 +12,47 @@ function createService(){
     };
 
     var payloads = {};
+    var sockets = [];
 
     var fns = [];
     var zonarStart = [];
 
     // TODO: should probably merge this and rep somehow...
-    pub.pub = function(obj){
+    pub.pub = function(obj, cb){
         var endpointName = null;
         var callback = null;
         var port = 0;
 
-        if(typeof obj.callback != 'function'){
-            throw new Error("No callback passed to rep function");
-        }
+        if(typeof obj == 'function'){
+            callback = cb;
+        } else {
 
-        callback = obj.callback;
+            if(typeof cb != 'function'){
+                throw new Error("No callback passed to rep function");
+            }
 
-        if(obj.endpointName && typeof obj.endpointName == 'string'){
-            endpointName = obj.endpointName;
-        }
+            callback = cb;
 
-        if(obj.port && typeof obj.port == 'number'){
-            port = obj.port;
+            if(obj.endpointName && typeof obj.endpointName == 'string'){
+                endpointName = obj.endpointName;
+            }
+
+            if(obj.port && typeof obj.port == 'number'){
+                port = obj.port;
+            }
         }
 
         var sock = zmq.socket("pub");
-        sock.bindSync("tcp://*:" + port);
-        callback(function(msg){
+
+        sockets.push(sock);
+
+        try {
+            sock.bindSync("tcp://*:" + port);
+        } catch (e){
+            callback(e);
+        }
+
+        callback(null, function(msg){
             sock.send(msg);
         });
 
@@ -57,15 +71,15 @@ function createService(){
         });
     };
 
-    pub.sub = function(obj){
+    pub.sub = function(obj, cb){
         var to = null;
         var channel = null;
         var callback = null;
 
-        if(typeof obj.callback != 'function'){
+        if(typeof cb != 'function'){
             throw new Error('sub needs a callback function. "' + obj.callback + '" was provided');
         }
-        callback = obj.callback;
+        callback = cb;
 
         if(obj.to == null || obj.to.length == 0){
             callback("to parameter invalid or not set", null);
@@ -85,6 +99,7 @@ function createService(){
                         callback(err, null);
                         return;
                     }
+                    sockets.push(sock);
 
                     setupCallback(sock, channel, callback);
                 });
@@ -97,8 +112,16 @@ function createService(){
             }
 
         } else {
+
             var sock = zmq.socket("sub");
-            sock.connect(to);
+            sockets.push(sock);
+            try{
+                sock.connect(to);
+            } catch (e) {
+                callback(e);
+                return;
+            }
+
             setupCallback(sock, channel, callback);
         }
 
@@ -134,6 +157,7 @@ function createService(){
                         return;
                     }
 
+                    sockets.push(sock);
                     sock.on("message", function(msg){
                         callback(null, msg);
                         sock.close();
@@ -153,12 +177,14 @@ function createService(){
         } else {
 
             var sock = zmq.socket("req");
+            sockets.push(sock);
 
             try {
                 sock.connect(to);
                 sock.send(message);
             } catch (e) {
                 callback(e, null);
+                return;
             }
 
             sock.on("message", function(msg){
@@ -168,29 +194,43 @@ function createService(){
         }
     };
 
-    pub.rep = function(obj){
+    pub.rep = function(obj, cb){
         var endpointName = null;
         var callback = null;
         var port = 0;
 
-        if(typeof obj.callback != 'function'){
-            throw new Error("No callback passed to rep function");
-        }
+        if(typeof obj == 'function'){
+            callback = obj;
+        } else {
+            // first arg isnt fn, parse the object
 
-        callback = obj.callback;
+            if(typeof cb != 'function'){
+                throw new Error("No callback passed to rep function");
+            }
 
-        if(obj.endpointName && typeof obj.endpointName == 'string'){
-            endpointName = obj.endpointName;
-        }
+            callback = cb;
 
-        if(obj.port && typeof obj.port == 'number'){
-            port = obj.port;
+            if(obj.endpointName && typeof obj.endpointName == 'string'){
+                endpointName = obj.endpointName;
+            }
+
+            if(obj.port && typeof obj.port == 'number'){
+                port = obj.port;
+            }
         }
 
         var sock = zmq.socket("rep");
-        sock.bindSync("tcp://*:" + port);
+        sockets.push(sock);
+
+        try {
+            sock.bindSync("tcp://*:" + port);
+        } catch (e){
+            callback(e);
+            return;
+        }
+
         sock.on("message", function(message){
-            callback(message, function(reply) {
+            callback(null, message, function(reply) {
                 sock.send(reply);
             });
         });
@@ -237,8 +277,23 @@ function createService(){
         });
     };
 
-    pub.stop = function(){
-        priv.zonar.stop();
+    pub.stop = function(cb){
+
+        for(var i = 0, ii = sockets.length; i < ii ; i++){
+            try{
+            sockets[i].close();
+            } catch (e){
+                //console.log(e);
+            }
+        }
+
+        if(priv.zonar !== null){
+            priv.zonar.stop(cb);
+            priv.zonar = null;
+        } else {
+            cb();
+        }
+
     };
 
     function runZonarStart(){

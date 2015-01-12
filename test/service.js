@@ -11,7 +11,7 @@ describe("parseServiceName", function() {
         }).should.throw();
     });
 
-    it.skip("a service should be startable with one service definition", function() {
+    it.skip("a service should be startable with one service definition", function(done) {
         var s = createService();
 
         s.rep(function(_, rep){ rep("data"); });
@@ -19,17 +19,19 @@ describe("parseServiceName", function() {
         (function(){
             s.broadcast();
         }).should.not.throw();
+
+        s.stop(function(){
+            done();
+        });
     });
 
     it("a reply service definition should be callable", function(done) {
         var msg = "this is an echo message";
 
         var s = createService();
-        s.rep({
-            endpointName : "echo",
-            callback : function(msg, reply){
-                reply(msg);
-            }
+        s.rep({endpointName : "echo"}, function(err, msg, reply){
+            (err === null).should.be.true;
+            reply(msg);
         });
         s.broadcast({net: "test", name: "testname"});
 
@@ -38,9 +40,11 @@ describe("parseServiceName", function() {
         s2.req("testname.echo", msg, function(err, response){
             (err === null).should.be.true;
             response.toString().should.equal(msg);
-            s2.stop();
-            s.stop();
-            done();
+            s.stop(function(){
+                s2.stop(function(){
+                    done();
+                });
+            });
         });
 
     });
@@ -49,20 +53,20 @@ describe("parseServiceName", function() {
         var msg = "this is an echo message";
 
         var s = createService();
-        s.rep({
-            endpointName : "echo",
-            callback : function(msg, reply){
-                reply(msg);
-            }
+        s.rep({ endpointName : "echo" }, function(err, msg, reply){
+            (err === null).should.be.true;
+            reply(msg);
         });
 
         var s2 = createService();
         s2.req("testname.echo", msg, function(err, response){
             (err === null).should.be.true;
             response.toString().should.equal(msg);
-            s.stop();
-            s2.stop();
-            done();
+            s.stop(function(){
+                s2.stop(function(){
+                    done();
+                });
+            });
         });
 
         s.broadcast({net: "test", name: "testname"});
@@ -74,25 +78,43 @@ describe("parseServiceName", function() {
         var port = 9898;
 
         var s = createService();
-        s.rep({
-            endpointName : "echo",
-            port : port,
-            callback : function(msg, reply){
-                reply(msg);
-            }
+        s.rep({ endpointName : "echo", port : port }, function(err, msg, reply){
+            (err === null).should.be.true;
+            reply(msg);
         });
 
         var s2 = createService();
         s2.req("tcp://127.0.0.1:" + port, msg, function(err, response){
             (err === null).should.be.true;
             response.toString().should.equal(msg);
-            s.stop();
-            s2.stop();
-            done();
+            s.stop(function(){
+                s2.stop(function(){
+                    done();
+                });
+            });
         });
 
         s.broadcast({net: "test", name: "testname"});
         s2.listen({net: "test", name: "testname2"});
+    });
+
+    it("binding to same port twice should fail", function(done) {
+        var port = 9898;
+
+        var s = createService();
+        setTimeout(function(){
+            s.rep({ endpointName : "echo", port : port}, function(err, msg, reply){
+                (err === null).should.be.true;
+            });
+            s.rep({ endpointName : "echo", port : port}, function(err, msg, reply){
+                (err === null).should.be.false;
+                s.stop(function(){
+                    done();
+                });
+            });
+
+            s.broadcast({net: "test", name: "testname"});
+        }, 1000);
     });
 
     it("pub sub simple", function(done) {
@@ -100,23 +122,21 @@ describe("parseServiceName", function() {
         var publish = null;
 
         var s = createService();
-        s.pub({
-            endpointName : "data",
-            callback : function(publisher){
-                publish = publisher;
-            }
+        s.pub({endpointName : "data"}, function(err, publisher){
+            (err === null).should.be.true;
+            publish = publisher;
         });
 
         var s2 = createService();
-        s2.sub({
-            to : "testname.data",
-            callback : function(err, msg){
-                (err === null).should.be.true;
-                msg.toString().should.equal(data);
-                s.stop();
-                s2.stop();
-                done();
-            }
+        s2.sub({ to : "testname.data"}, function(err, msg){
+            (err === null).should.be.true;
+            msg.toString().should.equal(data);
+            s.stop(function(){
+                s2.stop(function(){
+                    console.log("hello");
+                    done();
+                });
+            });
         });
 
         s.broadcast({net: "test", name: "testname"}, function(){
