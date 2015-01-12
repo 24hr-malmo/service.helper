@@ -146,10 +146,19 @@ function createService(){
         }
     };
 
-    pub.req = function(to, message, callback){
+    pub.req = function(obj, callback){
+        var to = obj.to;
+        var message = obj.message;
+
+        if(typeof callback != 'function'){
+            throw new Error("Callback must be passed as the second argument to req");
+        }
 
         if(typeof to != 'string' || typeof message != 'string'){
-            throw new Error("to and message arguments must be strings");
+            setTimeout(function(){
+                callback("to and message arguments must be strings");
+            }, 0);
+            return;
         }
 
         var uri = url.parse(to);

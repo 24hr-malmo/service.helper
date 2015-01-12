@@ -40,7 +40,7 @@ describe("service", function() {
 
         var s2 = createService();
         s2.listen({net: "test", name: "testname2"});
-        s2.req("testname.echo", msg, function(err, response){
+        s2.req({ to : "testname.echo", message : msg}, function(err, response){
             (err === null).should.be.true;
             response.toString().should.equal(msg);
             s.stop(function(){
@@ -62,7 +62,7 @@ describe("service", function() {
         });
 
         var s2 = createService();
-        s2.req("testname.echo", msg, function(err, response){
+        s2.req({ to : "testname.echo", message : msg }, function(err, response){
             (err === null).should.be.true;
             response.toString().should.equal(msg);
             s.stop(function(){
@@ -87,7 +87,7 @@ describe("service", function() {
         });
 
         var s2 = createService();
-        s2.req("tcp://127.0.0.1:" + port, msg, function(err, response){
+        s2.req({ to : "tcp://127.0.0.1:" + port, message : msg}, function(err, response){
             (err === null).should.be.true;
             response.toString().should.equal(msg);
             s.stop(function(){
@@ -141,7 +141,7 @@ describe("service", function() {
 
         s.broadcast({net: "test", name: "testname"}, function(){
             s2.listen({net: "test", name: "testname2"}, function(){
-                // ugly
+                // ugly but we need to wait for zonar or listen to specific events to do this better
                 setTimeout(function(){
                     publish(data);
                 }, 100);
