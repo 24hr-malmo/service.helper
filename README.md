@@ -3,6 +3,7 @@ init
 
 service
 
+```
 
 var s = createService();
 
@@ -61,3 +62,5 @@ s.broadcast({ net: "my-net", name :"demoservice"});
 
 // at some later point
 s.stop(function(){});
+
+```
