@@ -42,7 +42,7 @@ describe("service", function() {
         s2.listen({net: "test", name: "testname2"});
         s2.req({ to : "testname.echo", message : msg}, function(err, response){
             (err === null).should.be.true;
-            response.toString().should.equal(msg);
+            response.should.equal(msg);
             s.stop(function(){
                 s2.stop(function(){
                     done();
@@ -64,7 +64,7 @@ describe("service", function() {
         var s2 = createService();
         s2.req({ to : "testname.echo", message : msg }, function(err, response){
             (err === null).should.be.true;
-            response.toString().should.equal(msg);
+            response.should.equal(msg);
             s.stop(function(){
                 s2.stop(function(){
                     done();
@@ -89,7 +89,7 @@ describe("service", function() {
         var s2 = createService();
         s2.req({ to : "tcp://127.0.0.1:" + port, message : msg}, function(err, response){
             (err === null).should.be.true;
-            response.toString().should.equal(msg);
+            response.should.equal(msg);
             s.stop(function(){
                 s2.stop(function(){
                     done();
@@ -131,7 +131,7 @@ describe("service", function() {
         var s2 = createService();
         s2.sub({ to : "testname.data"}, function(err, msg){
             (err === null).should.be.true;
-            msg.toString().should.equal(data);
+            msg.should.equal(data);
             s.stop(function(){
                 s2.stop(function(){
                     done();
@@ -144,6 +144,42 @@ describe("service", function() {
                 // ugly but we need to wait for zonar or listen to specific events to do this better
                 setTimeout(function(){
                     publish(data);
+                }, 100);
+            });
+        });
+    });
+
+    it("pub sub channel data should be cleaned before returning", function(done) {
+        var data = "this is a pub message";
+        var channel = "testchannel";
+        var channelData = "special channel data";
+        var publish = null;
+
+        var s = createService();
+        s.pub({endpointName : "data"}, function(err, publisher){
+            (err === null).should.be.true;
+            publish = publisher;
+        });
+
+        var s2 = createService();
+        s2.sub({ to : "testname.data", channel : channel}, function(err, msg){
+            (err === null).should.be.true;
+            msg.should.equal(channelData);
+            s.stop(function(){
+                s2.stop(function(){
+                    done();
+                });
+            });
+        });
+
+        s.broadcast({net: "test", name: "testname"}, function(){
+            s2.listen({net: "test", name: "testname2"}, function(){
+                // ugly but we need to wait for zonar or listen to specific events to do this better
+                setTimeout(function(){
+                    publish(data);
+                    setTimeout(function(){
+                        publish(channel + channelData);
+                    }, 200);
                 }, 100);
             });
         });

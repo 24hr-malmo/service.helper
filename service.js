@@ -132,15 +132,15 @@ function createService(){
         }
 
         function setupCallback(sock, channel, callback){
-            if(channel != null){
+            if(channel != null && channel != ""){
                 sock.subscribe(channel);
                 sock.on("message", function(msg){
-                    callback(null, msg);
+                    callback(null, msg.toString().slice(channel.length));
                 });
             } else {
                 sock.subscribe("");
                 sock.on("message", function(msg){
-                    callback(null, msg);
+                    callback(null, msg.toString());
                 });
             }
         }
@@ -174,7 +174,7 @@ function createService(){
 
                     sockets.push(sock);
                     sock.on("message", function(msg){
-                        callback(null, msg);
+                        callback(null, msg.toString());
                         sock.close();
                     });
 
@@ -206,7 +206,7 @@ function createService(){
             }
 
             sock.on("message", function(msg){
-                callback(null, msg);
+                callback(null, msg.toString());
                 sock.close();
             });
         }
