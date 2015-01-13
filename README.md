@@ -3,7 +3,7 @@ init
 
 service
 
-```
+```javascript
 
 var s = createService();
 
