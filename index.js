@@ -293,6 +293,7 @@ function createDoc(options){
 
 module.exports = {
     getService : getService,
+    service : require("./service"),
 
     // exposed for tests
     parsePayload : parsePayload,
