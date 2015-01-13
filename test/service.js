@@ -118,6 +118,60 @@ describe("service", function() {
 
     });
 
+    it("pub sub drop", function(done) {
+        var data = "this is a pub message";
+        var data2 = "this is a pub message2";
+        var second = false;
+        var final_pub = null;
+
+        var createPublisher = function(cb){
+            var s = createService();
+            var _publisher = null;
+            s.pub({endpointName : "data"}, function(err, publisher){
+                (err === null).should.be.true;
+                _publisher = publisher;
+            });
+            s.broadcast({net: "test", name: "testname"}, function(){
+                cb(_publisher, s);
+            });
+
+        };
+
+
+        var s3 = createService();
+        s3.sub({ to : "testname.data"}, function(err, msg){
+            (err === null).should.be.true;
+
+            if(!second){
+                msg.should.equal(data);
+            } else {
+                msg.should.equal(data2);
+                s3.stop(function(){
+                    final_pub.stop(function(){
+                        done();
+                    });
+                });
+            }
+        });
+
+        s3.listen({net: "test", name: "testname2"}, function(){
+            createPublisher(function(p1, s1){
+                setTimeout(function(){
+                    p1(data);
+                    s1.stop(function(){
+                        createPublisher(function(p2, s2){
+                            second = true;
+                            final_pub = s2;
+                            setTimeout(function(){
+                                p2(data2);
+                            }, 100);
+                        });
+                    });
+                }, 100);
+            });
+        });
+    });
+
     it("pub sub simple", function(done) {
         var data = "this is a pub message";
         var publish = null;

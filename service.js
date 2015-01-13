@@ -7,11 +7,12 @@ function createService(){
     var pub = {};
 
     var priv = {
-        zonar : null
+        zonar : null,
+        stopped : false
     };
 
     var payloads = {};
-    var sockets = [];
+    var sockets = {};
 
     var fns = [];
     var zonarStart = [];
@@ -43,7 +44,7 @@ function createService(){
 
         var sock = zmq.socket("pub");
 
-        sockets.push(sock);
+        sockets[endpointName] = sock;
 
         try {
             sock.bindSync("tcp://*:" + port);
@@ -101,22 +102,43 @@ function createService(){
                         callback(err, null);
                         return;
                     }
-                    sockets.push(sock);
+                    sockets[to] = sock;
 
                     setupCallback(sock, channel, callback);
                 });
             };
 
+            var nodeName = helper.parseServiceName(to).nodeName;
+            var setupReconnect = function(){
+                priv.zonar.once("dropped." + nodeName, function(){
+                    if(priv.stopped == false){
+                        if(sockets[to]){
+                            try {
+                                console.log(sockets[to].close());
+                                delete sockets[to];
+                            } catch (e) { console.log(e); }
+                        }
+                        console.log(to + " dropped, refetching endpoint and setting up reconnect cb again...");
+                        fetchEndpoint();
+                        setupReconnect();
+                    } else {
+                        console.log("asdf");
+                    }
+                });
+            };
+
             if(priv.zonar != null){
                 fetchEndpoint();
+                setupReconnect();
             } else {
                 zonarStart.push(fetchEndpoint);
+                zonarStart.push(setupReconnect);
             }
 
         } else {
 
             var sock = zmq.socket("sub");
-            sockets.push(sock);
+            sockets[to] = sock;
             try{
                 sock.connect(to);
             } catch (e) {
@@ -149,6 +171,7 @@ function createService(){
         var to = obj.to;
         var message = obj.message;
 
+        // parse args
         if(typeof callback != 'function'){
             throw new Error("Callback must be passed as the second argument to req");
         }
@@ -163,6 +186,7 @@ function createService(){
         var uri = url.parse(to);
 
         if(uri.protocol == null){
+            // zonar node
 
             var fetchEndpoint = function(){
                 helper.getService(priv.zonar, to, function(err, sock){
@@ -171,7 +195,7 @@ function createService(){
                         return;
                     }
 
-                    sockets.push(sock);
+                    sockets[to] = sock;
                     sock.on("message", function(msg){
                         callback(null, msg.toString());
                         sock.close();
@@ -189,9 +213,10 @@ function createService(){
             }
 
         } else {
+            // regular proto
 
             var sock = zmq.socket("req");
-            sockets.push(sock);
+            sockets[to] = sock;
 
             try {
                 sock.connect(to);
@@ -237,7 +262,7 @@ function createService(){
         }
 
         var sock = zmq.socket("rep");
-        sockets.push(sock);
+        sockets[endpointName] = sock;
 
         try {
             sock.bindSync("tcp://*:" + port);
@@ -306,10 +331,13 @@ function createService(){
     };
 
     pub.stop = function(cb){
+        priv.stopped = true;
+        var keys = Object.keys(sockets);
 
-        for(var i = 0, ii = sockets.length; i < ii ; i++){
+        for(var i = 0, ii = keys.length; i < ii ; i++){
+            var key = keys[i];
             try{
-                sockets[i].close();
+                sockets[key].close();
             } catch (e){
                 // ignore any error we just try to shut as down as much as possible
                 //console.log(e);
