@@ -1,7 +1,6 @@
 var zmq = require("zmq");
 var zonar = require("zonar");
 var url = require("url");
-var Promise = require("es6-promises").Promise;
 var helper = require("./index");
 
 function createService(){
