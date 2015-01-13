@@ -149,6 +149,37 @@ describe("service", function() {
         });
     });
 
+    it("pub sub port and tcp connection", function(done) {
+        var data = "this is a pub message";
+        var publish = null;
+
+        var s = createService();
+        s.pub({endpointName : "data", port : 8989}, function(err, publisher){
+            (err === null).should.be.true;
+            publish = publisher;
+        });
+
+        var s2 = createService();
+        s2.sub({ to : "tcp://127.0.0.1:8989"}, function(err, msg){
+            (err === null).should.be.true;
+            msg.should.equal(data);
+            s.stop(function(){
+                s2.stop(function(){
+                    done();
+                });
+            });
+        });
+
+        s.broadcast({net: "test", name: "testname"}, function(){
+            s2.listen({net: "test", name: "testname2"}, function(){
+                // ugly but we need to wait for zonar or listen to specific events to do this better
+                setTimeout(function(){
+                    publish(data);
+                }, 100);
+            });
+        });
+    });
+
     it("pub sub channel data should be cleaned before returning", function(done) {
         var data = "this is a pub message";
         var channel = "testchannel";
