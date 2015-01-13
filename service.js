@@ -1,7 +1,7 @@
 var zmq = require("zmq");
 var zonar = require("zonar");
 var url = require("url");
-var helper = require("./index");
+var helper = require("./helper");
 
 function createService(){
     var pub = {};
