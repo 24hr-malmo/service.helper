@@ -54,13 +54,43 @@ s.pub({endpointName : "data"}, function(err, publisher){
     publish("hello");
 });
 
-...
+////////////////////////////////////////////////////////////////////////////////
+// sub
+////////////////////////////////////////////////////////////////////////////////
 
 
+s2.sub({ to : "testname.data"}, function(err, msg){
+    console.log(msg);
+});
 
+s2.sub({ to : "tcp://127.0.0.1:9876"}, function(err, msg){
+    console.log(msg);
+});
+
+s2.sub({ to : "testname.data", channel : "specialDataChannel"}, function(err, msg){
+    console.log(msg);
+});
+
+
+// zonar broadcast
 s.broadcast({ net: "my-net", name :"demoservice"});
 
+// or
+
+// zonar listen
+s.broadcast({ net: "my-net", name :"demoservice"});
+
+
+// util
+
+// fetches (zonar) endpoint payload
+console.log(s.getPayload());
+
+
 // at some later point
-s.stop(function(){});
+// this also tries to stop all underlying zmq sockets and calls zonar.stop
+s.stop(function(){
+    console.log("probably stopped now");
+});
 
 ```
