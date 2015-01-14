@@ -359,7 +359,11 @@ function createService(){
 
         if(priv.zonar != null){
             runZonarStop();
-            priv.zonar.stop(cb);
+            priv.zonar.stop(function(){
+                setTimeout(function(){
+                    cb();
+                }, 200);
+            });
         } else {
             cb();
         }

@@ -207,7 +207,7 @@ describe("servicetests", function() {
                 // ugly but we need to wait for zonar or listen to specific events to do this better
                 setTimeout(function(){
                     publish(data);
-                }, 1000);
+                }, 100);
             });
         });
     });
