@@ -117,6 +117,8 @@ function getService(zonarNode, serviceName, cb){
     }
 
     zonarNode.once("found." + service.nodeName, function(node){
+        log("found node " + service.nodeName);
+        log(node);
         if(node == false){
             // error in zonar
             return cb("service not found");

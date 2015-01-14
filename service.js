@@ -16,6 +16,7 @@ function createService(){
 
     var fns = [];
     var zonarStart = [];
+    var zonarStop = [];
 
     // TODO: should probably merge this and rep somehow...
     pub.pub = function(obj, cb){
@@ -99,7 +100,9 @@ function createService(){
             var fetchEndpoint = function(){
                 helper.getService(priv.zonar, to, function(err, sock){
                     if(err){
-                        callback(err, null);
+                        setTimeout(function(){
+                            callback(err, null);
+                        }, 0);
                         return;
                     }
                     sockets[to] = sock;
@@ -110,21 +113,30 @@ function createService(){
 
             var nodeName = helper.parseServiceName(to).nodeName;
             var setupReconnect = function(){
-                priv.zonar.once("dropped." + nodeName, function(){
+
+                var r = function(){
                     if(priv.stopped == false){
                         if(sockets[to]){
                             try {
-                                console.log(sockets[to].close());
+                                sockets[to].close();
                                 delete sockets[to];
-                            } catch (e) { console.log(e); }
+                            } catch (e) {
+                                //console.log(e);
+                                //console.log("AAAA");
+                            }
                         }
                         console.log(to + " dropped, refetching endpoint and setting up reconnect cb again...");
                         fetchEndpoint();
                         setupReconnect();
-                    } else {
-                        console.log("asdf");
                     }
-                });
+                };
+
+                priv.zonar.once("dropped." + nodeName, r);
+
+                //zonarStop.push(function(){
+                //    console.log("removing listener for " + nodeName);
+                //    priv.zonar.removeListener("dropped." + nodeName, r);
+                //});
             };
 
             if(priv.zonar != null){
@@ -340,11 +352,13 @@ function createService(){
                 sockets[key].close();
             } catch (e){
                 // ignore any error we just try to shut as down as much as possible
+                //console.log("ERROR");
                 //console.log(e);
             }
         }
 
         if(priv.zonar != null){
+            runZonarStop();
             priv.zonar.stop(cb);
         } else {
             cb();
@@ -355,6 +369,12 @@ function createService(){
     function runZonarStart(){
         for(var i = 0, ii = zonarStart.length; i < ii; i++){
             zonarStart[i]();
+        }
+    }
+
+    function runZonarStop(){
+        for(var i = 0, ii = zonarStop.length; i < ii; i++){
+            zonarStop[i]();
         }
     }
 

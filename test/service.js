@@ -2,7 +2,14 @@ var should = require("should");
 var zmq = require("zmq");
 var createService = require("../service");
 
-describe("service", function() {
+describe("servicetests", function() {
+
+    //beforeEach(function(done){
+    //    setTimeout(function(){
+    //        done();
+    //    }, 500);
+    //});
+
 
     it("a service should not be startable without service definitions", function() {
         var s = createService();
@@ -36,16 +43,18 @@ describe("service", function() {
             (err === null).should.be.true;
             reply(msg);
         });
-        s.broadcast({net: "test", name: "testname"});
+        s.broadcast({net: "test", name: "testname"}, function(){
 
-        var s2 = createService();
-        s2.listen({net: "test", name: "testname2"});
-        s2.req({ to : "testname.echo", message : msg}, function(err, response){
-            (err === null).should.be.true;
-            response.should.equal(msg);
-            s.stop(function(){
-                s2.stop(function(){
-                    done();
+            var s2 = createService();
+            s2.listen({net: "test", name: "testname2"}, function(){
+                s2.req({ to : "testname.echo", message : msg}, function(err, response){
+                    s.stop(function(){
+                        s2.stop(function(){
+                            (err === null).should.be.true;
+                            response.should.equal(msg);
+                            done();
+                        });
+                    });
                 });
             });
         });
@@ -88,10 +97,10 @@ describe("service", function() {
 
         var s2 = createService();
         s2.req({ to : "tcp://127.0.0.1:" + port, message : msg}, function(err, response){
-            (err === null).should.be.true;
-            response.should.equal(msg);
             s.stop(function(){
                 s2.stop(function(){
+                    (err === null).should.be.true;
+                    response.should.equal(msg);
                     done();
                 });
             });
@@ -198,7 +207,7 @@ describe("service", function() {
                 // ugly but we need to wait for zonar or listen to specific events to do this better
                 setTimeout(function(){
                     publish(data);
-                }, 100);
+                }, 1000);
             });
         });
     });
