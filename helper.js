@@ -201,6 +201,7 @@ function findServiceNode(zonarNode, nodeName){
 }
 
 function handleInterrupt(zonar, cb){
+    console.log("handling interrupt");
     if (!zonar) {
         console.error("no zonar instance given to handleInterrupt");
         return;

@@ -328,6 +328,14 @@ function createService(){
         });
     };
 
+    pub.handleInterrupt = function(){
+        if(!priv.zonar){
+            console.log("Zonar not started yet!");
+        } else {
+            helper.handleInterrupt(priv.zonar);
+        }
+    };
+
     pub.listen = function(settings, next){
         priv.zonar = zonar.create(settings);
         //priv.zonar.on("error", function(e){
