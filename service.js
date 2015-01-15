@@ -135,8 +135,8 @@ function createService(){
                         if(onDrop != null) {
                             onDrop();
                         }
-                        fetchEndpoint();
-                        setupReconnect(onReconnect);
+                        fetchEndpoint(onReconnect);
+                        setupReconnect();
                     }
                 };
 
