@@ -77,8 +77,10 @@ function createService(){
 
     pub.sub = function(obj, cb){
         var to = null;
-        var channel = null;
         var callback = null;
+        var channel = typeof obj.channel == "string" ? obj.channel : null;
+        var onDrop = typeof obj.onDrop == "function" ? obj.onDrop : null;
+        var onReconnect = typeof obj.onReconnect == "function" ? obj.onReconnect : null;
 
         if(typeof cb != 'function'){
             throw new Error('sub needs a callback function. "' + obj.callback + '" was provided');
@@ -97,7 +99,7 @@ function createService(){
         var uri = url.parse(to);
         if(uri.protocol == null){
 
-            var fetchEndpoint = function(){
+            var fetchEndpoint = function(onConnect){
                 helper.getService(priv.zonar, to, function(err, sock){
                     if(err){
                         setTimeout(function(){
@@ -106,6 +108,10 @@ function createService(){
                         return;
                     }
                     sockets[to] = sock;
+
+                    if(typeof onConnect == "function"){
+                        onConnect();
+                    }
 
                     setupCallback(sock, channel, callback);
                 });
@@ -125,9 +131,12 @@ function createService(){
                                 //console.log("AAAA");
                             }
                         }
-                        console.log(to + " dropped, refetching endpoint and setting up reconnect cb again...");
+                        //console.log(to + " dropped, refetching endpoint and setting up reconnect cb again...");
+                        if(onDrop != null) {
+                            onDrop();
+                        }
                         fetchEndpoint();
-                        setupReconnect();
+                        setupReconnect(onReconnect);
                     }
                 };
 
