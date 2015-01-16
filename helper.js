@@ -2,7 +2,7 @@ var zmq = require("zmq");
 var url = require("url");
 var fs = require("fs");
 
-var dolog = false;
+var dolog = true;
 
 function log(){
     if (dolog){
@@ -94,6 +94,8 @@ function tryParseJson(msg){
 // checks the nodelist first and if the node isn't found there it waits for it
 // to come online
 function getService(zonarNode, serviceName, cb){
+
+    console.log("getService : " + serviceName);
 
     if(typeof cb !== 'function'){
         return;
