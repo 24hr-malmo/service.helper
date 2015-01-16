@@ -54,6 +54,7 @@ function createService(){
             setTimeout(function(){
                 callback(e);
             }, 0);
+            return;
         }
 
         callback(null, function(msg){
