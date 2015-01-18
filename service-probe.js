@@ -1,11 +1,13 @@
 var helper = require("./index.js");
 var opt = require('node-getopt');
 var zmq = require('zmq');
+var zonar = require('zonar');
 
 var o = new opt([
-    ["t", "type=ARG", "type of socket (req, res, pub, sub, ...)"],
+    ["t", "type=ARG", "type of socket (req, res, pub, sub, listen ...)"],
     ["r", "remote=ARG", "remote host and port, 1.2.3.4:1234"],
-    ["m", "message=ARG", "message to send ex \"{\\\"type\\\":\\\"getMessage\\\"}\""]
+    ["m", "message=ARG", "message to send ex \"{\\\"type\\\":\\\"getMessage\\\"}\""],
+    ["n", "net=ARG", "net to listen on"]
 ]);
 
 o.setHelp(
@@ -26,6 +28,9 @@ function init(options){
     case "req":
         req(options.remote, options.message);
         break;
+    case "listen":
+        listen(options.net);
+        break;
     default:
         optionFatal("Invalid type");
         break;
@@ -36,6 +41,27 @@ function optionFatal(msg){
     console.log("\nError : " + msg + "\n");
     o.showHelp();
     process.exit();
+}
+
+function listen(net){
+    var z = zonar.create({net : net, name : "service-prove-listener"});
+
+    z.on("found", function(node){
+        prettyPrintNode("found", node);
+    });
+
+    z.on("dropped", function(node){
+        prettyPrintNode("dropped", node);
+    });
+
+    z.listen(function(){
+        console.log("listening");
+    });
+
+    function prettyPrintNode(ev, n){
+        console.log(ev + "\t\t" + n.net + "." + n.name + " " + n.address + ":" + n.port + "\t\tid : " + n.id);
+    }
+
 }
 
 function req(remote, message){
