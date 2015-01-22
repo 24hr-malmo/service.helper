@@ -377,6 +377,7 @@ function createService(){
 
         if(priv.zonar != null){
             runZonarStop();
+            helper.stop(priv.zonar);
             priv.zonar.stop(function(){
                 setTimeout(function(){
                     cb();
@@ -386,6 +387,17 @@ function createService(){
             cb();
         }
 
+    };
+
+    pub.doc = function(opt){
+        if(priv.zonar != null){
+            throw Error("registering doc after starting service is not supported yet");
+        }
+
+        var doc = helper.createDoc(opt);
+        var payload = doc.getPayload();
+        sockets["doc"] = doc.getSocket();
+        addPayload("doc", payload);
     };
 
     function runZonarStart(){

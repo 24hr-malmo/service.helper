@@ -2,7 +2,9 @@ var zmq = require("zmq");
 var url = require("url");
 var fs = require("fs");
 
-var dolog = true;
+var dolog = false;
+
+var onces = {};
 
 function log(){
     if (dolog){
@@ -34,10 +36,13 @@ function createZMQSocket(node, service){
         // invalid types will be caught here
         var services = node.payload;
         endpoint = services[service.serviceName];
+        //console.log(service);
+        //console.log(services);
+        //console.log(endpoint);
         endpointType = getOtherSockType(endpoint.type);
         sock = zmq.socket(endpointType);
     } catch (e){
-        log(e, e.stack);
+        log(e.stack);
         return false;
     }
 
@@ -118,9 +123,14 @@ function getService(zonarNode, serviceName, cb){
         return;
     }
 
-    zonarNode.once("found." + service.nodeName, function(node){
+    var eventName = "found." + service.nodeName;
+
+    function onZonarNodeFound(node){
         log("found node " + service.nodeName);
         log(node);
+
+        delete onces[zonarNode.id][eventName];
+
         if(node == false){
             // error in zonar
             return cb("service not found");
@@ -134,7 +144,18 @@ function getService(zonarNode, serviceName, cb){
 
         return cb(false, socket);
 
-    });
+    };
+
+    zonarNode.once(eventName, onZonarNodeFound);
+
+    if(!onces[zonarNode.id]){
+        onces[zonarNode.id] = {};
+    }
+
+    onces[zonarNode.id][eventName] = function(){
+        log("removing listener for " + eventName);
+        zonarNode.removeListener(eventName, onZonarNodeFound);
+    };
 };
 
 
@@ -184,7 +205,8 @@ function getServiceAddress(zonarNode, serviceName){
         // just assuming it will always be tcp
         return "tcp://" + node.address + ":" + endpoint.port;
     } catch (e) {
-        log("Service endpoint does not exist.", e.stack);
+        log("Service endpoint does not exist.");
+        log(e.stack);
         return false;
     }
 
@@ -200,6 +222,23 @@ function findServiceNode(zonarNode, nodeName){
     }
 
     return node;
+}
+
+function stop(zonarNode){
+    var cbs = onces[zonarNode.id];
+
+    if(!cbs){
+        return;
+    }
+
+    var keys = Object.keys(cbs);
+
+    for(var i = 0, ii = keys.length; i < ii; i++){
+        var key = keys[i];
+        var cb = cbs[key];
+        cb();
+    }
+
 }
 
 function handleInterrupt(zonar, cb){
@@ -286,6 +325,10 @@ function createDoc(options){
         return u.port;
     };
 
+    pub.getSocket = function(){
+        return sock;
+    };
+
     pub.getPayload = function(){
         return {
             type : "rep",
@@ -307,6 +350,7 @@ module.exports = {
     getServiceAddress : getServiceAddress,
     createDoc : createDoc,
     tryParseJson : tryParseJson,
+    stop : stop,
     setLog : function(val){
         dolog = val;
     }

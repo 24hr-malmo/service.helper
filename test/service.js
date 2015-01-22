@@ -279,106 +279,77 @@ describe("servicetests", function() {
         });
     });
 
-    it.skip("the following should work", function(){
+    it("sub on drop onreconnect", function(done) {
+        var data = "this is a pub message";
+        var onDropCalled = false;
+        var onReconnectCalled = false;
 
         var s = createService();
-
-        ////////////////////////////////////////////////////////////////////////////////
-        // reply
-        ////////////////////////////////////////////////////////////////////////////////
-        s.rep(function(msg, reply){
-            // send some reply
-            reply("your message was " + msg);
+        s.pub({endpointName : "data"}, function(err, publisher){
+            (err === null).should.be.true;
         });
 
-        // reply bind to specific zonar name
-        s.rep("getCurrentMessage", function(msg, reply){
-            // send some reply
-            reply("your message was " + msg);
+        var s3 = createService();
+        s3.pub({endpointName : "data"}, function(err, publisher){
+            (err === null).should.be.true;
         });
 
-        ////////////////////////////////////////////////////////////////////////////////
-        // request
-        ////////////////////////////////////////////////////////////////////////////////
-        s.req("tcp://1.1.1.1:1233", "hello", function(response){
-            console.log(response);
+        var s2 = createService();
+        s2.sub({ to : "testname.data", onDrop : function(){
+            onDropCalled = true;
+        }, onReconnect : function(){
+            onReconnectCalled = true;
+        }}, function(err, msg){
+            (1 === 2).should.be.true;
         });
 
-        s.req("zonarname", "hello", function(response){
-            console.log(response);
+        // start pub and sub
+        s.broadcast({net: "test", name: "testname"}, function(){
+            s2.listen({net: "test", name: "testname2"}, function(){
+
+                // stop original service
+                s.stop(function(){
+                    // start new service
+                    s3.broadcast({net: "test", name: "testname"},function(){
+                        // give zonar some time to reconnect
+                        setTimeout(function(){
+                            // stop sub service
+                            s2.stop(function(){
+                                // stop new publisher
+                                s3.stop(function(){
+                                    onDropCalled.should.be.true;
+                                    onReconnectCalled.should.be.true;
+                                    done();
+                                });
+                            });
+                        }, 500);
+                    });
+                });
+            });
         });
+    });
 
+    it("service doc should respond with doc", function(done) {
+        var data = "this is documentation";
+        var publish = null;
 
-        ////////////////////////////////////////////////////////////////////////////////
-        // publish
-        ////////////////////////////////////////////////////////////////////////////////
-        s.pub(function(publish){
-            publish("important data to publish!");
-        });
-
-        // bind publisher to specific zonar endpoint
-        s.pub("messageChanged", function(publish){
-            publish("important data to publish!");
-        });
-
-
-        ////////////////////////////////////////////////////////////////////////////////
-        // subscribe
-        ////////////////////////////////////////////////////////////////////////////////
-        s.sub("zonarname", function(msg){
-            console.log(msg);
-        });
-
-        s.sub("zonarname", "channel", function(msg){
-            console.log(msg);
-        });
-
-        s.sub("tcp://1.2.3.4:1234", function(msg){
-            console.log(msg);
-        });
-
-        s.sub("tcp://1.2.3.4:1234", "channel", function(msg){
-            console.log(msg);
-        });
-
-
-
-
-
-
-
-
-
-
-        // service "manager"
         var s = createService();
+        s.doc(data);
 
-        // request
-        s.req("tcp://1.1.1.1:1233", "hello").on("message", function(message){ console.log("response : " + message); });
-        s.req("zonarname", "hello").on("message", function(message){ console.log("response : " + message); });
+        var s2 = createService();
 
-        // reply
-        s.rep().on("message", function(msg, reply){ reply("your message was : " + msg);});
-        s.rep("endpointName").on("message", function(msg, reply){ reply("your message was : " + msg);});
-
-        // publisher
-        s.pub().then(function(publish){ publish("all datamaskin"); });
-        s.pub("endpointname").then(function(publish){ publish("all datamaskin"); });
-
-        // subscriber
-        s.sub("zonarname", "channel").on("message", function(msg){ console.log(msg); });
-        s.sub("zonarname").on("message", function(msg){ console.log(msg); });
-        s.sub("tcp://1.2.3.4:1234", "channel").on("message", function(msg){ console.log(msg); });
-        s.sub("tcp://1.2.3.4:1234").on("message", function(msg){ console.log(msg); });
-
-        // just start it
-        s.start();
-
-        // start and broadcast that we're an available service
-        s.start({net : "24hr", name: "hello"});
-
-        // get endpoints
-        s.getEndpoints();
-
+        s.broadcast({net: "test", name: "testname"}, function(){
+            s2.listen({net: "test", name: "testname2"}, function(){
+                s2.req({to: "testname.doc"}, function(err, res){
+                    (err === null).should.be.true;
+                    res.should.equal(res);
+                    s.stop(function(){
+                        s2.stop(function(){
+                            done();
+                        });
+                    });
+                });
+            });
+        });
     });
 });
