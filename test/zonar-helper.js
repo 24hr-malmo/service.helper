@@ -57,7 +57,8 @@ describe("bb test", function() {
 
     after(function(){
         consumer.stop(function(){
-            producer.stop();
+            zonarHelper.stop(producer);
+            zonarHelper.stop(consumer);
         });
     });
 
@@ -87,11 +88,10 @@ describe("bb test", function() {
         zonarHelper.getService(consumer, "producer2.doc", function(err, sock){
             err.should.be.false;
             should.exist(sock);
-            producer2.stop();
+            zonarHelper.stop(producer2);
             done();
         });
     });
-
 });
 
 describe("doc helper", function() {
@@ -155,7 +155,7 @@ describe("doc helper", function() {
         try {
             var docHelper3 = zonarHelper.createDoc({filename : "invalidfile"});
         } catch (err){
-            err.code.should.be.equal("ENOENT")
+            err.code.should.be.equal("ENOENT");
             done();
         }
     });

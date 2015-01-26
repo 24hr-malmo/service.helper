@@ -4,7 +4,7 @@ var fs = require("fs");
 
 var dolog = false;
 
-var onces = {};
+var onZonarStop = {};
 
 function log(){
     if (dolog){
@@ -36,9 +36,6 @@ function createZMQSocket(node, service){
         // invalid types will be caught here
         var services = node.payload;
         endpoint = services[service.serviceName];
-        //console.log(service);
-        //console.log(services);
-        //console.log(endpoint);
         endpointType = getOtherSockType(endpoint.type);
         sock = zmq.socket(endpointType);
     } catch (e){
@@ -100,7 +97,7 @@ function tryParseJson(msg){
 // to come online
 function getService(zonarNode, serviceName, cb){
 
-    console.log("getService : " + serviceName);
+    log("getService : " + serviceName);
 
     if(typeof cb !== 'function'){
         return;
@@ -111,9 +108,12 @@ function getService(zonarNode, serviceName, cb){
 
     if (sock != false) {
         // we found a socket in the nodelist use it
+        log("getService found static : " + serviceName);
         cb(false, sock);
         return;
     }
+
+    log("getService not found in static, fetching from zonar : " + serviceName);
 
     var service = parseServiceName(serviceName);
 
@@ -129,7 +129,7 @@ function getService(zonarNode, serviceName, cb){
         log("found node " + service.nodeName);
         log(node);
 
-        delete onces[zonarNode.id][eventName];
+        delete onZonarStop[zonarNode.id][eventName];
 
         if(node == false){
             // error in zonar
@@ -148,11 +148,11 @@ function getService(zonarNode, serviceName, cb){
 
     zonarNode.once(eventName, onZonarNodeFound);
 
-    if(!onces[zonarNode.id]){
-        onces[zonarNode.id] = {};
+    if(!onZonarStop[zonarNode.id]){
+        onZonarStop[zonarNode.id] = {};
     }
 
-    onces[zonarNode.id][eventName] = function(){
+    onZonarStop[zonarNode.id][eventName] = function(){
         log("removing listener for " + eventName);
         zonarNode.removeListener(eventName, onZonarNodeFound);
     };
@@ -225,7 +225,7 @@ function findServiceNode(zonarNode, nodeName){
 }
 
 function stop(zonarNode){
-    var cbs = onces[zonarNode.id];
+    var cbs = onZonarStop[zonarNode.id];
 
     if(!cbs){
         return;

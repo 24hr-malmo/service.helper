@@ -4,13 +4,6 @@ var createService = require("../service");
 
 describe("servicetests", function() {
 
-    //beforeEach(function(done){
-    //    setTimeout(function(){
-    //        done();
-    //    }, 500);
-    //});
-
-
     it("a service should not be startable without service definitions", function() {
         var s = createService();
         (function(){
