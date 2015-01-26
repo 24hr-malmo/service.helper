@@ -7,7 +7,8 @@ var o = new opt([
     ["t", "type=ARG", "type of socket (req, res, pub, sub, listen ...)"],
     ["r", "remote=ARG", "remote host and port, 1.2.3.4:1234"],
     ["m", "message=ARG", "message to send ex \"{\\\"type\\\":\\\"getMessage\\\"}\""],
-    ["n", "net=ARG", "net to listen on"]
+    ["n", "net=ARG", "net to listen on"],
+    ["c", "channel=ARG", "channel to subscribe to"]
 ]);
 
 o.setHelp(
@@ -28,6 +29,9 @@ function init(options){
     case "req":
         req(options.remote, options.message);
         break;
+    case "sub":
+        sub(options.remote, options.net, options.channel);
+        break;
     case "listen":
         listen(options.net);
         break;
@@ -37,6 +41,47 @@ function init(options){
     }
 }
 
+function sub(remote, net, channel){
+
+    var ch = false;
+
+    if(!net || typeof net != "string"){
+        console.log("net must be a string");
+        return;
+    }
+
+    if(typeof channel == 'string' && channel.length > 1){
+        ch = channel;
+    }
+
+    var s = helper.service({
+        to : remote,
+        ch : channel
+    }, function(err, msg){
+
+        if(err){
+            console.log("ERROR : ");
+            console.log(err);
+            return;
+        }
+
+        console.log(msg);
+    });
+
+    var settings = {
+        name : "service-probe-listener",
+        net : net
+    };
+
+    s.listen(settings, function(){
+        s.handleInterrupt();
+        console.log("subscribing");
+    });
+
+}
+
+
+
 function optionFatal(msg){
     console.log("\nError : " + msg + "\n");
     o.showHelp();
@@ -44,7 +89,7 @@ function optionFatal(msg){
 }
 
 function listen(net){
-    var z = zonar.create({net : net, name : "service-prove-listener"});
+    var z = zonar.create({net : net, name : "service-probe-listener"});
 
     z.on("found", function(node){
         prettyPrintNode("found", node);
@@ -70,8 +115,23 @@ function req(remote, message){
         optionFatal("Invalid remote in req : " + remote);
     }
 
+    var s = helper.service();
+
+    s.listen({net : "24hr", name : "service-probe"}, function(){
+        console.log("Connecting to " + remote);
+        s.req({ to : remote, message : message}, function(err, msg){
+            if(err){
+                console.log("ERROR:");
+                console.log(err);
+                return;
+            }
+
+            console.log(msg);
+        });
+    });
+
+    return;
     var socket = zmq.socket('req');
-    console.log("Connecting to " + remote);
     socket.connect(remote);
 
     socket.on("message", function(response){
