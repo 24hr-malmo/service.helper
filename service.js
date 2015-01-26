@@ -198,11 +198,15 @@ function createService(){
             throw new Error("Callback must be passed as the second argument to req");
         }
 
-        if(typeof to != 'string' || typeof message != 'string'){
+        if(typeof to != 'string'){
             setTimeout(function(){
                 callback("to and message arguments must be strings");
             }, 0);
             return;
+        }
+
+        if( typeof message != 'string' ){
+            message = "";
         }
 
         var uri = url.parse(to);
