@@ -43,7 +43,7 @@ function init(options){
 
 function sub(remote, net, channel){
 
-    var ch = false;
+    var ch = "";
 
     if(!net || typeof net != "string"){
         console.log("net must be a string");
@@ -54,10 +54,9 @@ function sub(remote, net, channel){
         ch = channel;
     }
 
-    var s = helper.service({
-        to : remote,
-        ch : channel
-    }, function(err, msg){
+    var s = helper.service();
+
+    s.sub({ to : remote, channel : ch }, function(err, msg){
 
         if(err){
             console.log("ERROR : ");

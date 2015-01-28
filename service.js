@@ -58,6 +58,11 @@ function createService(){
         }
 
         callback(null, function(msg){
+
+            if(typeof msg == "object"){
+                msg = JSON.stringify(msg);
+            }
+
             sock.send(msg);
         });
 
