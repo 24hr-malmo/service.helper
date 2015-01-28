@@ -57,13 +57,13 @@ function createService(){
             return;
         }
 
-        callback(null, function(msg){
-
-            if(typeof msg == "object"){
-                msg = JSON.stringify(msg);
+        callback(null, function(msg, channel){
+            var ch = "";
+            if(typeof channel == "string"){
+                ch = channel;
             }
 
-            sock.send(msg);
+            sock.send(ch + normalizeMessage(msg));
         });
 
         // if we didn't have a port to bind to fetch the random one
@@ -183,12 +183,12 @@ function createService(){
             if(channel != null && channel != ""){
                 sock.subscribe(channel);
                 sock.on("message", function(msg){
-                    callback(null, msg.toString().slice(channel.length));
+                    callback(null, tryJsonParse(msg.toString().slice(channel.length)));
                 });
             } else {
                 sock.subscribe("");
                 sock.on("message", function(msg){
-                    callback(null, msg.toString());
+                    callback(null, tryJsonParse(msg.toString()));
                 });
             }
         }
@@ -210,7 +210,7 @@ function createService(){
             return;
         }
 
-        if( typeof message != 'string' ){
+        if( typeof message != 'string' && typeof message != 'object' ){
             message = "";
         }
 
@@ -228,11 +228,11 @@ function createService(){
 
                     sockets[to] = sock;
                     sock.on("message", function(msg){
-                        callback(null, msg.toString());
+                        callback(null, tryJsonParse(msg.toString()));
                         sock.close();
                     });
 
-                    sock.send(message);
+                    sock.send(normalizeMessage(message));
                 });
             };
 
@@ -251,7 +251,7 @@ function createService(){
 
             try {
                 sock.connect(to);
-                sock.send(message);
+                sock.send(normalizeMessage(message));
             } catch (e) {
                 // push this to next tick to ensure that the callback behaves async
                 setTimeout(function(){
@@ -261,7 +261,7 @@ function createService(){
             }
 
             sock.on("message", function(msg){
-                callback(null, msg.toString());
+                callback(null, tryJsonParse(msg.toString()));
                 sock.close();
             });
         }
@@ -306,8 +306,8 @@ function createService(){
         }
 
         sock.on("message", function(message){
-            callback(null, message, function(reply) {
-                sock.send(reply);
+            callback(null, tryJsonParse(message.toString()), function(reply) {
+                sock.send(normalizeMessage(reply));
             });
         });
 
@@ -390,7 +390,7 @@ function createService(){
             priv.zonar.stop(function(){
                 setTimeout(function(){
                     cb();
-                }, 200);
+                }, 0);
             });
         } else {
             cb();
@@ -428,6 +428,25 @@ function createService(){
         }
 
         payloads[name] = payload;
+    }
+
+    function normalizeMessage(msg){
+        if(typeof msg === "object"){
+            msg = JSON.stringify(msg);
+        }
+
+        return msg;
+    }
+
+    function tryJsonParse(msg){
+        var out;
+        try {
+            out = JSON.parse(msg);
+        } catch(e) {
+            out = msg;
+        }
+
+        return out;
     }
 
     // for testing

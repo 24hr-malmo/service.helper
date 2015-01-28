@@ -54,6 +54,32 @@ describe("servicetests", function() {
 
     });
 
+    it("a reply service should be able to handle object messages", function(done) {
+        var msg = {message : "this is an echo message"};
+
+        var s = createService();
+        s.rep({endpointName : "echo"}, function(err, msg, reply){
+            (err === null).should.be.true;
+            reply(msg);
+        });
+        s.broadcast({net: "test", name: "testname"}, function(){
+
+            var s2 = createService();
+            s2.listen({net: "test", name: "testname2"}, function(){
+                s2.req({ to : "testname.echo", message : msg}, function(err, response){
+                    s.stop(function(){
+                        s2.stop(function(){
+                            (err === null).should.be.true;
+                            response.message.should.equal(msg.message);
+                            done();
+                        });
+                    });
+                });
+            });
+        });
+
+    });
+
     it("req for zonar node should get registered and run upon zonar start", function(done) {
         var msg = "this is an echo message";
 
@@ -200,6 +226,37 @@ describe("servicetests", function() {
                 // ugly but we need to wait for zonar or listen to specific events to do this better
                 setTimeout(function(){
                     publish(data);
+                }, 100);
+            });
+        });
+    });
+
+    it("pub sub channel object payload", function(done) {
+        var data = {message : "this is a pub message"};
+        var publish = null;
+
+        var s = createService();
+        s.pub({endpointName : "data"}, function(err, publisher){
+            (err === null).should.be.true;
+            publish = publisher;
+        });
+
+        var s2 = createService();
+        s2.sub({ to : "testname.data", channel : "testing"}, function(err, msg){
+            (err === null).should.be.true;
+            msg.message.should.equal(data.message);
+            s.stop(function(){
+                s2.stop(function(){
+                    done();
+                });
+            });
+        });
+
+        s.broadcast({net: "test", name: "testname"}, function(){
+            s2.listen({net: "test", name: "testname2"}, function(){
+                // ugly but we need to wait for zonar or listen to specific events to do this better
+                setTimeout(function(){
+                    publish(data, "testing");
                 }, 100);
             });
         });
