@@ -122,10 +122,12 @@ function req(remote, message){
             if(err){
                 console.log("ERROR:");
                 console.log(err);
+                die();
                 return;
             }
 
-            console.log(msg);
+            console.log(JSON.stringify(msg, null, 4));
+            die();
         });
     });
 
