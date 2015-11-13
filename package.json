@@ -19,7 +19,7 @@
   "dependencies": {
     "mocha": "~1.18.2",
     "should": "~3.3.1",
-    "zonar": "~0.5.6",
+    "zonar": "0.6.3",
     "zmq": "~2.8.0",
     "node-getopt": "~0.2.3"
   }
